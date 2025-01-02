@@ -1,0 +1,3 @@
+[gd_scene format=3 uid="uid://cpiu5g5pubsp5"]
+
+[node name="PlayerCamera" type="Camera2D"]
