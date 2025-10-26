@@ -1,7 +1,7 @@
 [gd_scene load_steps=72 format=3 uid="uid://ct41jmb7qtkh1"]
 
 [ext_resource type="Texture2D" uid="uid://cln1ubxiy43oh" path="res://art/characters/elf/double_jump_start/0_Dark_Elves_Double Jump_000.png" id="1_cvsjv"]
-[ext_resource type="Script" path="res://player/player.gd" id="1_wcthh"]
+[ext_resource type="Script" uid="uid://cfdfquqxbr38i" path="res://player/player.gd" id="1_wcthh"]
 [ext_resource type="Texture2D" uid="uid://n7mnms3u3wjr" path="res://art/characters/elf/double_jump_start/0_Dark_Elves_Double Jump_001.png" id="2_2s3yg"]
 [ext_resource type="PackedScene" uid="uid://cpiu5g5pubsp5" path="res://player/player_camera.tscn" id="2_u27vb"]
 [ext_resource type="Texture2D" uid="uid://k2rlkgmf0qqf" path="res://art/characters/elf/double_jump_start/0_Dark_Elves_Double Jump_002.png" id="3_xtw0l"]
