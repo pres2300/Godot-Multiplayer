@@ -14,6 +14,16 @@ extends CharacterBody2D
 var owner_id = 1
 var jump_count = 0
 var camera_instance
+var state = PlayerState.IDLE
+
+enum PlayerState {
+	IDLE,
+	WALKING,
+	JUMP_STARTED,
+	JUMPING,
+	DOUBLE_JUMPING,
+	FALLING
+}
 
 func _enter_tree():
 	owner_id = name.to_int()
@@ -49,7 +59,8 @@ func _physics_process(_delta: float) -> void:
 	face_movement_direction(horizontal_input)
 
 func _on_animated_sprite_2d_animation_finished() -> void:
-	player_sprite.play("jump")
+	if state == PlayerState.JUMPING:
+		player_sprite.play("jump")
 
 func set_up_camera():
 	camera_instance = player_camera.instantiate()
@@ -67,28 +78,44 @@ func face_movement_direction(horizontal_input):
 			player_sprite.scale = Vector2(initial_sprite_scale.x, initial_sprite_scale.y)
 
 func handle_movement_state():
-	var is_falling: bool = velocity.y > 0 and not is_on_floor()
-	var is_jumping: bool =  Input.is_action_just_pressed("jump") and is_on_floor()
-	var is_double_jumping: bool =  Input.is_action_just_pressed("jump") and is_falling
-	var is_jump_cancelled: bool = Input.is_action_just_released("jump") and velocity.y < 0.0
-	var is_idle: bool = is_on_floor() and is_zero_approx(velocity.x)
-	var is_walking: bool = is_on_floor() and not is_zero_approx(velocity.x)
+	# Decide state
+	if Input.is_action_just_pressed("jump") and is_on_floor():
+		state = PlayerState.JUMP_STARTED
+	elif is_on_floor() and is_zero_approx(velocity.x):
+		state = PlayerState.IDLE
+	elif is_on_floor() and not is_zero_approx(velocity.x):
+		state = PlayerState.WALKING
+	else:
+		state = PlayerState.JUMPING
 
-	if is_jumping:
-		player_sprite.play("jump_start")
-	elif is_double_jumping:
-		player_sprite.play("double_jump_start")
-	elif is_walking:
-		player_sprite.play("walk")
-	elif is_falling:
-		player_sprite.play("fall")
-	elif is_idle:
-		player_sprite.play("idle")
+	if velocity.y > 0 and not is_on_floor():
+		if Input.is_action_just_pressed("jump"):
+			state = PlayerState.DOUBLE_JUMPING
+		else:
+			state = PlayerState.FALLING
 
-	if is_jumping or is_double_jumping and jump_count < max_jumps:
-		velocity.y = -jump_strength
-		jump_count += 1
-	elif is_jump_cancelled:
+	# Process state
+	match state:
+		PlayerState.IDLE:
+			player_sprite.play("idle")
+			jump_count = 0
+		PlayerState.WALKING:
+			player_sprite.play("walk")
+			jump_count = 0
+		PlayerState.JUMP_STARTED:
+			player_sprite.play("jump_start")
+			velocity.y = -jump_strength
+			jump_count += 1
+		PlayerState.DOUBLE_JUMPING:
+			player_sprite.play("double_jump_start")
+			if jump_count < max_jumps:
+				jump_count += 1
+				velocity.y = -jump_strength
+		PlayerState.JUMPING:
+			pass
+		PlayerState.FALLING:
+			player_sprite.play("fall")
+
+	# Jump cancelling
+	if Input.is_action_just_released("jump") and velocity.y < 0.0:
 		velocity.y = 0.0
-	elif is_on_floor():
-		jump_count = 0

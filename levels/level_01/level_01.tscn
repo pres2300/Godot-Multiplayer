@@ -1,6 +1,6 @@
 [gd_scene load_steps=8 format=3 uid="uid://mou717ft6qef"]
 
-[ext_resource type="Script" path="res://levels/level.gd" id="1_1xo4h"]
+[ext_resource type="Script" uid="uid://c0t0050ulgyqa" path="res://levels/level.gd" id="1_1xo4h"]
 [ext_resource type="Texture2D" uid="uid://chwbcf7n2ajtp" path="res://art/platforms/Platformer_spritesheet.png" id="1_y1imb"]
 [ext_resource type="Texture2D" uid="uid://bja0wl8tcw71c" path="res://art/backgrounds/background_01.png" id="2_mj7pk"]
 [ext_resource type="Texture2D" uid="uid://bujx43rcy5b85" path="res://art/backgrounds/background_02.png" id="3_cwdtg"]
@@ -83,7 +83,7 @@ centered = false
 [node name="PlayersContainer" type="Node2D" parent="Players"]
 
 [node name="PlayerSpawner" type="MultiplayerSpawner" parent="Players"]
-_spawnable_scenes = PackedStringArray("res://player/player.tscn")
+_spawnable_scenes = PackedStringArray("uid://ct41jmb7qtkh1")
 spawn_path = NodePath("../PlayersContainer")
 spawn_limit = 2
 
