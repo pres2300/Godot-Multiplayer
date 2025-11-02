@@ -315,6 +315,8 @@ properties/2/spawn = true
 properties/2/replication_mode = 2
 
 [node name="Player" type="CharacterBody2D"]
+collision_layer = 2
+collision_mask = 3
 script = ExtResource("1_wcthh")
 player_camera = ExtResource("2_u27vb")
 
