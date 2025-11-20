@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://mou717ft6qef"]
+[gd_scene load_steps=11 format=3 uid="uid://mou717ft6qef"]
 
 [ext_resource type="Script" uid="uid://c0t0050ulgyqa" path="res://levels/level.gd" id="1_1xo4h"]
 [ext_resource type="Texture2D" uid="uid://chwbcf7n2ajtp" path="res://art/platforms/Platformer_spritesheet.png" id="1_y1imb"]
@@ -6,6 +6,8 @@
 [ext_resource type="Texture2D" uid="uid://bujx43rcy5b85" path="res://art/backgrounds/background_02.png" id="3_cwdtg"]
 [ext_resource type="PackedScene" uid="uid://ct41jmb7qtkh1" path="res://player/player.tscn" id="4_373x3"]
 [ext_resource type="PackedScene" uid="uid://dbp8pya88kdm" path="res://interactables/pressure_plate/pressure_plate.tscn" id="6_71kry"]
+[ext_resource type="PackedScene" uid="uid://r4ukta6tg5hx" path="res://interactables/door/door.tscn" id="7_aqob7"]
+[ext_resource type="PackedScene" uid="uid://ccl77hha71kd5" path="res://interactables/chest/chest.tscn" id="8_thp0t"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_avrvw"]
 texture = ExtResource("1_y1imb")
@@ -84,6 +86,13 @@ centered = false
 [node name="PressurePlate" parent="Interactables" instance=ExtResource("6_71kry")]
 position = Vector2(396, 503)
 
+[node name="Door" parent="Interactables" instance=ExtResource("7_aqob7")]
+position = Vector2(-182, 505)
+
+[node name="Chest" parent="Interactables" instance=ExtResource("8_thp0t")]
+position = Vector2(-444, 506)
+scale = Vector2(-1, 1)
+
 [node name="Players" type="Node" parent="."]
 
 [node name="PlayersContainer" type="Node2D" parent="Players"]
@@ -98,3 +107,6 @@ position = Vector2(155, 497)
 
 [node name="SpawnPoint_1" type="Marker2D" parent="Players"]
 position = Vector2(274, 496)
+
+[connection signal="toggle" from="Interactables/PressurePlate" to="Interactables/Door" method="activate"]
+[connection signal="toggle" from="Interactables/PressurePlate" to="Interactables/Chest" method="_on_test_interact"]

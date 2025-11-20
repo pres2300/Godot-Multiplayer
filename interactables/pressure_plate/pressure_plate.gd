@@ -7,6 +7,8 @@ extends Node2D
 
 var bodies_on_plate: int = 0
 
+signal toggle(state)
+
 func _on_area_2d_body_entered(_body: Node2D) -> void:
 	if not multiplayer.is_server():
 		return
@@ -15,6 +17,9 @@ func _on_area_2d_body_entered(_body: Node2D) -> void:
 	update_plate_state()
 
 func _on_area_2d_body_exited(_body: Node2D) -> void:
+	if multiplayer.multiplayer_peer == null:
+		return
+
 	if not multiplayer.is_server():
 		return
 
@@ -23,6 +28,7 @@ func _on_area_2d_body_exited(_body: Node2D) -> void:
 
 func update_plate_state() -> void:
 	is_down = bodies_on_plate > 0
+	toggle.emit(is_down)
 	set_plate_properties()
 
 func set_plate_properties() -> void:
