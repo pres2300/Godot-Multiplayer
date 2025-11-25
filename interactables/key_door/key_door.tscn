@@ -1,10 +1,49 @@
-[gd_scene load_steps=2 format=3 uid="uid://dt1kti3c7l5dc"]
+[gd_scene load_steps=7 format=3 uid="uid://dt1kti3c7l5dc"]
 
 [ext_resource type="Texture2D" uid="uid://bg27k5sblx533" path="res://art/objects/Door_01.png" id="1_hdo2b"]
+[ext_resource type="Script" uid="uid://cr8vyyb8nf7q1" path="res://interactables/key_door/key_door.gd" id="1_q5ler"]
+
+[sub_resource type="Gradient" id="Gradient_hdo2b"]
+offsets = PackedFloat32Array(0, 0.99462366)
+colors = PackedColorArray(0, 0, 0, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_q5ler"]
+gradient = SubResource("Gradient_hdo2b")
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hdo2b"]
+size = Vector2(70, 131)
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_hdo2b"]
+properties/0/path = NodePath(".:is_open")
+properties/0/spawn = true
+properties/0/replication_mode = 2
 
 [node name="KeyDoor" type="Node2D"]
+script = ExtResource("1_q5ler")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="DoorClosed" type="Sprite2D" parent="."]
+z_index = -1
 position = Vector2(0, -70)
 scale = Vector2(0.55, 0.55)
 texture = ExtResource("1_hdo2b")
+
+[node name="DoorOpen" type="Sprite2D" parent="."]
+visible = false
+z_index = -1
+position = Vector2(1.9073486e-06, -65.49999)
+scale = Vector2(0.275, 130)
+texture = SubResource("GradientTexture1D_q5ler")
+
+[node name="Area2D" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 8
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+position = Vector2(0, -65.5)
+shape = SubResource("RectangleShape2D_hdo2b")
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
+replication_config = SubResource("SceneReplicationConfig_hdo2b")
+
+[connection signal="area_entered" from="Area2D" to="." method="_on_area_2d_area_entered"]
+[connection signal="delta_synchronized" from="MultiplayerSynchronizer" to="." method="_on_multiplayer_synchronizer_delta_synchronized"]
