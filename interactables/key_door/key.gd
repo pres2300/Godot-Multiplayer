@@ -6,6 +6,9 @@ extends Node2D
 var following_body
 
 func _process(delta):
+	if multiplayer.multiplayer_peer == null:
+		return
+
 	if multiplayer.is_server():
 		if following_body != null:
 			global_position = lerp(
