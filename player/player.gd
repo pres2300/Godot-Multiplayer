@@ -10,6 +10,7 @@ extends CharacterBody2D
 @export var gravity = 30
 @export var jump_strength = 600
 @export var max_jumps = 3
+@export var push_force = 10
 
 var owner_id = 1
 var jump_count = 0
@@ -60,6 +61,16 @@ func _physics_process(_delta: float) -> void:
 	handle_movement_state()
 
 	move_and_slide()
+
+	for i in get_slide_collision_count():
+		var collision = get_slide_collision(i)
+		var pushable = collision.get_collider() as PushableObject
+
+		if pushable == null:
+			continue
+
+		var point = collision.get_position() - pushable.global_position
+		pushable.push(-collision.get_normal()*push_force, point)
 
 	face_movement_direction(horizontal_input)
 
