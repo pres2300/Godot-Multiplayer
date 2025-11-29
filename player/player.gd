@@ -12,6 +12,7 @@ extends CharacterBody2D
 @export var jump_strength = 600
 @export var max_jumps = 3
 @export var push_force = 10
+@export var target_position: Vector2 = Vector2.INF
 
 var owner_id = 1
 var jump_count = 0
@@ -37,11 +38,17 @@ func _enter_tree():
 
 	set_up_camera()
 
-func _process(_delta):
+func _process(delta):
 	if multiplayer.multiplayer_peer == null:
 		return
 
 	if owner_id != multiplayer.get_unique_id():
+		# This is another player, so we should interpolate the position
+		global_position = HelperFunctions.ClientInterpolate(
+			global_position,
+			target_position,
+			delta
+		)
 		return
 
 	update_camera_pos()
@@ -62,6 +69,8 @@ func _physics_process(_delta: float) -> void:
 	handle_movement_state()
 
 	move_and_slide()
+
+	target_position = global_position
 
 	for i in get_slide_collision_count():
 		var collision = get_slide_collision(i)
