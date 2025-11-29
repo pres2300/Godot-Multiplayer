@@ -2,6 +2,7 @@ extends CharacterBody2D
 
 @onready var player_sprite = $AnimatedSprite2D
 @onready var initial_sprite_scale = player_sprite.scale
+@onready var player_finder = $PlayerFinder
 
 @export var player_camera: PackedScene
 @export var camera_height = 245
@@ -142,3 +143,9 @@ func _on_interaction_handler_area_entered(area: Area2D) -> void:
 func _on_interaction_handler_area_exited(area: Area2D) -> void:
 	if current_interactable == area:
 		current_interactable = null
+
+func _on_visible_on_screen_notifier_2d_screen_entered() -> void:
+	player_finder.hide()
+
+func _on_visible_on_screen_notifier_2d_screen_exited() -> void:
+	player_finder.show()

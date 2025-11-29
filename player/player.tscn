@@ -1,4 +1,4 @@
-[gd_scene load_steps=73 format=3 uid="uid://ct41jmb7qtkh1"]
+[gd_scene load_steps=74 format=3 uid="uid://ct41jmb7qtkh1"]
 
 [ext_resource type="Texture2D" uid="uid://cln1ubxiy43oh" path="res://art/characters/elf/double_jump_start/0_Dark_Elves_Double Jump_000.png" id="1_cvsjv"]
 [ext_resource type="Script" uid="uid://cfdfquqxbr38i" path="res://player/player.gd" id="1_wcthh"]
@@ -68,6 +68,7 @@
 [ext_resource type="Texture2D" uid="uid://bbthkjqiq33il" path="res://art/characters/elf/walk/0_Dark_Elves_Walking_021.png" id="64_3p5i1"]
 [ext_resource type="Texture2D" uid="uid://b771rxse6n114" path="res://art/characters/elf/walk/0_Dark_Elves_Walking_022.png" id="65_sjsao"]
 [ext_resource type="Texture2D" uid="uid://c2r31n6lj0pks" path="res://art/characters/elf/walk/0_Dark_Elves_Walking_023.png" id="66_jw24e"]
+[ext_resource type="PackedScene" uid="uid://kpbjhe4tifql" path="res://player/player_finder.tscn" id="69_7l6ig"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_cdlob"]
 size = Vector2(40, 56)
@@ -345,6 +346,15 @@ shape = SubResource("RectangleShape2D_b2j0d")
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
 replication_config = SubResource("SceneReplicationConfig_ev7jd")
 
+[node name="VisibleOnScreenNotifier2D" type="VisibleOnScreenNotifier2D" parent="."]
+rect = Rect2(-20, -56, 40, 56)
+
+[node name="PlayerFinder" parent="." instance=ExtResource("69_7l6ig")]
+visible = false
+position = Vector2(0, -27)
+
 [connection signal="animation_finished" from="AnimatedSprite2D" to="." method="_on_animated_sprite_2d_animation_finished"]
 [connection signal="area_entered" from="AnimatedSprite2D/InteractionHandler" to="." method="_on_interaction_handler_area_entered"]
 [connection signal="area_exited" from="AnimatedSprite2D/InteractionHandler" to="." method="_on_interaction_handler_area_exited"]
+[connection signal="screen_entered" from="VisibleOnScreenNotifier2D" to="." method="_on_visible_on_screen_notifier_2d_screen_entered"]
+[connection signal="screen_exited" from="VisibleOnScreenNotifier2D" to="." method="_on_visible_on_screen_notifier_2d_screen_exited"]

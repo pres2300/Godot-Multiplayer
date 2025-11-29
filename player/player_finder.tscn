@@ -1,0 +1,25 @@
+[gd_scene load_steps=4 format=3 uid="uid://kpbjhe4tifql"]
+
+[ext_resource type="Script" uid="uid://h06ia706v3g6" path="res://player/player_finder.gd" id="1_8c5to"]
+[ext_resource type="Texture2D" uid="uid://5ndk5ribdpk4" path="res://art/characters/character_marker/Player_Finder.png" id="1_ewedp"]
+[ext_resource type="Texture2D" uid="uid://cijdeq4s63sbc" path="res://art/characters/elf/idle/0_Dark_Elves_Idle_000.png" id="2_rdavb"]
+
+[node name="PlayerFinder" type="Node2D"]
+script = ExtResource("1_8c5to")
+
+[node name="Pivot" type="Sprite2D" parent="."]
+z_index = 200
+position = Vector2(-1, 0)
+rotation = 1.5707964
+scale = Vector2(0.4, 0.4)
+texture = ExtResource("1_ewedp")
+centered = false
+offset = Vector2(-78, 0)
+
+[node name="Icon" type="Sprite2D" parent="Pivot"]
+position = Vector2(0, 131.30518)
+rotation = -1.5707964
+scale = Vector2(0.275, 0.275)
+texture = ExtResource("2_rdavb")
+region_enabled = true
+region_rect = Rect2(212.37033, 196.42877, 426.45676, 403.04224)
