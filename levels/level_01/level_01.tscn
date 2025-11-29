@@ -1,10 +1,11 @@
-[gd_scene load_steps=14 format=3 uid="uid://mou717ft6qef"]
+[gd_scene load_steps=15 format=3 uid="uid://mou717ft6qef"]
 
 [ext_resource type="Script" uid="uid://c0t0050ulgyqa" path="res://levels/level.gd" id="1_1xo4h"]
 [ext_resource type="Texture2D" uid="uid://chwbcf7n2ajtp" path="res://art/platforms/Platformer_spritesheet.png" id="1_y1imb"]
 [ext_resource type="Texture2D" uid="uid://bja0wl8tcw71c" path="res://art/backgrounds/background_01.png" id="2_mj7pk"]
+[ext_resource type="PackedScene" uid="uid://cjyrqdups4g57" path="res://player/elf/elf.tscn" id="2_qu0in"]
 [ext_resource type="Texture2D" uid="uid://bujx43rcy5b85" path="res://art/backgrounds/background_02.png" id="3_cwdtg"]
-[ext_resource type="PackedScene" uid="uid://ct41jmb7qtkh1" path="res://player/player.tscn" id="4_373x3"]
+[ext_resource type="PackedScene" uid="uid://b8bi377qlagyq" path="res://player/knight/knight.tscn" id="3_ng00s"]
 [ext_resource type="PackedScene" uid="uid://dbp8pya88kdm" path="res://interactables/pressure_plate/pressure_plate.tscn" id="6_71kry"]
 [ext_resource type="PackedScene" uid="uid://ca76hgsuq1053" path="res://interactables/bridge/bridge.tscn" id="6_upmp1"]
 [ext_resource type="PackedScene" uid="uid://r4ukta6tg5hx" path="res://interactables/door/door.tscn" id="7_aqob7"]
@@ -50,7 +51,7 @@ sources/0 = SubResource("TileSetAtlasSource_avrvw")
 
 [node name="Level_01" type="Node2D" node_paths=PackedStringArray("spawn_points")]
 script = ExtResource("1_1xo4h")
-player_scene = ExtResource("4_373x3")
+player_scenes = Array[PackedScene]([ExtResource("2_qu0in"), ExtResource("3_ng00s")])
 spawn_points = [NodePath("Players/SpawnPoint_0"), NodePath("Players/SpawnPoint_1")]
 
 [node name="Environment" type="Node" parent="."]
@@ -97,7 +98,7 @@ position = Vector2(-684, 507)
 scale = Vector2(-1, 1)
 
 [node name="KeyDoor" parent="Interactables" instance=ExtResource("9_b3jm5")]
-position = Vector2(2209, 186)
+position = Vector2(-124, 507)
 
 [node name="BridgePlate1" parent="Interactables" instance=ExtResource("6_71kry")]
 position = Vector2(1373, 181)
@@ -116,7 +117,7 @@ position = Vector2(739, 210)
 [node name="PlayersContainer" type="Node2D" parent="Players"]
 
 [node name="PlayerSpawner" type="MultiplayerSpawner" parent="Players"]
-_spawnable_scenes = PackedStringArray("uid://ct41jmb7qtkh1")
+_spawnable_scenes = PackedStringArray("uid://cjyrqdups4g57", "uid://b8bi377qlagyq")
 spawn_path = NodePath("../PlayersContainer")
 spawn_limit = 2
 

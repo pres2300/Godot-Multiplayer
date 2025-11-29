@@ -42,6 +42,13 @@ func hide_menu():
 func change_level(scene):
 	for c in level_container.get_children():
 		level_container.remove_child(c)
+		c.level_complete.disconnect(_on_level_complete)
 		c.queue_free()
 
-	level_container.add_child(scene.instantiate())
+	var new_level = scene.instantiate()
+	level_container.add_child(new_level)
+	new_level.level_complete.connect(_on_level_complete)
+
+func _on_level_complete():
+	# this is where you would change to the next level if available, etc.
+	call_deferred("change_level", level_scene)

@@ -3,6 +3,7 @@ extends CharacterBody2D
 @onready var player_sprite = $AnimatedSprite2D
 @onready var initial_sprite_scale = player_sprite.scale
 @onready var player_finder = $PlayerFinder
+@onready var multiplayer_sync = $MultiplayerSynchronizer
 
 @export var player_camera: PackedScene
 @export var camera_height = 245
@@ -28,6 +29,9 @@ enum PlayerState {
 	DOUBLE_JUMPING,
 	FALLING
 }
+
+func disable_multiplayer_sync():
+	multiplayer_sync.public_visibility = false
 
 func _enter_tree():
 	owner_id = name.to_int()
@@ -91,7 +95,7 @@ func _on_animated_sprite_2d_animation_finished() -> void:
 func set_up_camera():
 	camera_instance = player_camera.instantiate()
 	camera_instance.global_position.y = camera_height
-	get_tree().current_scene.add_child.call_deferred(camera_instance)
+	get_parent().add_child.call_deferred(camera_instance)
 
 func update_camera_pos():
 	camera_instance.global_position.x = global_position.x

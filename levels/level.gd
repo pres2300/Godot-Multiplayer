@@ -1,11 +1,15 @@
 extends Node2D
 
-@onready var players_container = $Players/PlayersContainer
+signal level_complete
 
-@export var player_scene: PackedScene
+@onready var players_container = $Players/PlayersContainer
+@onready var key_door: KeyDoor = $Interactables/KeyDoor
+
+@export var player_scenes: Array[PackedScene]
 @export var spawn_points: Array[Marker2D]
 
 var next_spawn_point_idx = 0
+var next_character_index = 0
 
 func _ready():
 	if not multiplayer.is_server():
@@ -18,6 +22,8 @@ func _ready():
 
 	add_player(1)
 
+	key_door.all_players_finished.connect(_on_all_players_finished)
+
 func _exit_tree():
 	if multiplayer.multiplayer_peer == null:
 		return
@@ -28,10 +34,14 @@ func _exit_tree():
 	multiplayer.peer_disconnected.disconnect(delete_player)
 
 func add_player(id):
-	var player_instance = player_scene.instantiate()
+	var player_instance = player_scenes[next_character_index].instantiate()
 	player_instance.position = get_spawn_point()
 	player_instance.name = str(id)
 	players_container.add_child(player_instance)
+
+	next_character_index += 1
+	if next_character_index >= player_scenes.size():
+		next_character_index = 0
 
 func delete_player(id):
 	if not players_container.has_node(str(id)):
@@ -47,3 +57,7 @@ func get_spawn_point():
 		next_spawn_point_idx = 0
 
 	return spawn_point
+
+func _on_all_players_finished():
+	key_door.all_players_finished.disconnect(_on_all_players_finished)
+	level_complete.emit()

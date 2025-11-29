@@ -11,7 +11,7 @@ colors = PackedColorArray(0, 0, 0, 1, 0, 0, 0, 1)
 gradient = SubResource("Gradient_hdo2b")
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hdo2b"]
-size = Vector2(70, 131)
+size = Vector2(95, 141.215)
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_hdo2b"]
 properties/0/path = NodePath(".:is_open")
@@ -39,11 +39,21 @@ collision_layer = 0
 collision_mask = 8
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
-position = Vector2(0, -65.5)
+position = Vector2(-0.5, -70.5)
+shape = SubResource("RectangleShape2D_hdo2b")
+
+[node name="ExitArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 2
+monitoring = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ExitArea"]
+position = Vector2(-0.5, -70.5)
 shape = SubResource("RectangleShape2D_hdo2b")
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
 replication_config = SubResource("SceneReplicationConfig_hdo2b")
 
 [connection signal="area_entered" from="Area2D" to="." method="_on_area_2d_area_entered"]
+[connection signal="body_entered" from="ExitArea" to="." method="_on_exit_area_body_entered"]
 [connection signal="delta_synchronized" from="MultiplayerSynchronizer" to="." method="_on_multiplayer_synchronizer_delta_synchronized"]
