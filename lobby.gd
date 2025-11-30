@@ -4,6 +4,10 @@ extends Node
 const PORT = 7000
 const MAX_CONNECTIONS = 2
 
+# Authentication vars
+var auth_ticket: Dictionary
+var client_auth_tickets: Array
+
 var players = {}
 var player_info = {"name": "Name"}
 
@@ -17,6 +21,37 @@ func _ready():
 	multiplayer.connected_to_server.connect(_on_connected_to_server)
 	multiplayer.connection_failed.connect(_on_connection_failed)
 	multiplayer.server_disconnected.connect(_on_server_disconnected)
+
+	# Authentication callbacks
+	Steam.get_auth_session_ticket_response.connect(_on_get_auth_session_ticket_response)
+	Steam.validate_auth_ticket_response.connect(_on_validate_auth_ticket_response)
+
+	auth_ticket = Steam.getAuthSessionTicket()
+
+# Callback from getting the auth ticket from Steam
+func _on_get_auth_session_ticket_response(this_auth_ticket: int, result: int) -> void:
+	print("Auth session result: %s" % result)
+	print("Auth session ticket handle: %s" % this_auth_ticket)
+
+# Callback from attempting to validate the auth ticket
+func _on_validate_auth_ticket_response(auth_id: int, response: int, owner_id: int) -> void:
+	print("Ticket Owner: %s" % auth_id)
+
+	# Make the response more verbose, highly unnecessary but good for this example
+	var verbose_response: String
+	match response:
+		0: verbose_response = "Steam has verified the user is online, the ticket is valid and ticket has not been reused."
+		1: verbose_response = "The user in question is not connected to Steam."
+		2: verbose_response = "The user doesn't have a license for this App ID or the ticket has expired."
+		3: verbose_response = "The user is VAC banned for this game."
+		4: verbose_response = "The user account has logged in elsewhere and the session containing the game instance has been disconnected."
+		5: verbose_response = "VAC has been unable to perform anti-cheat checks on this user."
+		6: verbose_response = "The ticket has been canceled by the issuer."
+		7: verbose_response = "This ticket has already been used, it is not valid."
+		8: verbose_response = "This ticket is not from a user instance currently connected to steam."
+		9: verbose_response = "The user is banned for this game. The ban came via the Web API and not VAC."
+	print("Auth response: %s" % verbose_response)
+	print("Game owner ID: %s" % owner_id)
 
 func _on_player_connected(id):
 	_register_player.rpc_id(id, player_info)
@@ -43,6 +78,27 @@ func _on_server_disconnected():
 	multiplayer.multiplayer_peer = null
 	players.clear()
 	server_disconnected.emit()
+
+func validate_auth_session(ticket: Dictionary, steam_id: int) -> int:
+	var auth_response: int = Steam.beginAuthSession(ticket.buffer, ticket.size, steam_id)
+
+	# Get a verbose response; unnecessary but useful in this example
+	var verbose_response: String
+	match auth_response:
+		0: verbose_response = "Ticket is valid for this game and this Steam ID."
+		1: verbose_response = "The ticket is invalid."
+		2: verbose_response = "A ticket has already been submitted for this Steam ID."
+		3: verbose_response = "Ticket is from an incompatible interface version."
+		4: verbose_response = "Ticket is not for this game."
+		5: verbose_response = "Ticket has expired."
+	print("Auth verifcation response: %s" % verbose_response)
+
+	if auth_response == 0:
+		print("Validation successful, adding user to client_auth_tickets")
+		client_auth_tickets.append({"id": steam_id, "ticket": ticket.id})
+
+	# You can now add the client to the game
+	return auth_response
 
 func create_game():
 	var peer = ENetMultiplayerPeer.new()
