@@ -4,14 +4,15 @@ extends Node
 @onready var level_container = $Level
 @onready var not_connected_hbox = $UI/NotConnectedHBox
 @onready var host_hbox = $UI/HostHBox
-@onready var ip_line_edit = $UI/NotConnectedHBox/IPLineEdit
 @onready var status_label = $UI/StatusLabel
+@onready var server_list = $UI/MarginContainer/ScrollContainer/ServerList
 
 @export var level_scene: PackedScene
 
 func _ready() -> void:
 	multiplayer.connection_failed.connect(_on_connection_failed)
 	multiplayer.connected_to_server.connect(_on_connected_to_server)
+	Lobby.lobbies_found.connect(create_lobbies_list)
 
 func _on_host_button_pressed() -> void:
 	not_connected_hbox.hide()
@@ -20,9 +21,12 @@ func _on_host_button_pressed() -> void:
 	status_label.text = "Hosting!"
 
 func _on_join_button_pressed() -> void:
-	not_connected_hbox.hide()
-	Lobby.join_game(ip_line_edit.text)
-	status_label.text = "Connecting..."
+	Lobby.get_lobby_list()
+
+	# Old code for reference
+	#not_connected_hbox.hide()
+	#Lobby.join_game(ip_line_edit.text)
+	#status_label.text = "Connecting..."
 
 func _on_start_button_pressed() -> void:
 	hide_menu.rpc()
@@ -38,6 +42,28 @@ func _on_connected_to_server() -> void:
 @rpc("call_local", "authority", "reliable")
 func hide_menu():
 	ui.hide()
+
+func create_lobbies_list(these_lobbies):
+	for this_lobby in these_lobbies:
+		# Pull lobby data from Steam, these are specific to our example
+		var lobby_name: String = Steam.getLobbyData(this_lobby, "name")
+		var lobby_mode: String = Steam.getLobbyData(this_lobby, "mode")
+
+		# Get the current number of members
+		var lobby_num_members: int = Steam.getNumLobbyMembers(this_lobby)
+
+		# Create a button for the lobby
+		var lobby_button: Button = Button.new()
+		lobby_button.set_text("Lobby %s: %s [%s] - %s Player(s)" % [this_lobby, lobby_name, lobby_mode, lobby_num_members])
+		lobby_button.set_size(Vector2(800, 50))
+		lobby_button.set_name("lobby_%s" % this_lobby)
+		lobby_button.connect("pressed", Callable(self, "join_lobby").bind(this_lobby))
+
+		# Add the new lobby to the list
+		server_list.add_child(lobby_button)
+
+func join_lobby(lobby):
+	print("Joining lobby: ", lobby)
 
 func change_level(scene):
 	for c in level_container.get_children():

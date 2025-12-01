@@ -1,6 +1,6 @@
 [gd_scene load_steps=6 format=3 uid="uid://f1ld03x3if47"]
 
-[ext_resource type="Script" path="res://levels/menu/menu.gd" id="1_guoly"]
+[ext_resource type="Script" uid="uid://c63643inqdy4o" path="res://levels/menu/menu.gd" id="1_guoly"]
 [ext_resource type="Texture2D" uid="uid://bja0wl8tcw71c" path="res://art/backgrounds/background_01.png" id="1_k6lxc"]
 [ext_resource type="Texture2D" uid="uid://bujx43rcy5b85" path="res://art/backgrounds/background_02.png" id="2_rl1b4"]
 [ext_resource type="PackedScene" uid="uid://mou717ft6qef" path="res://levels/level_01/level_01.tscn" id="2_s01l1"]
@@ -17,7 +17,7 @@ level_scene = ExtResource("2_s01l1")
 [node name="Level" type="Node" parent="."]
 
 [node name="LevelSpawner" type="MultiplayerSpawner" parent="."]
-_spawnable_scenes = PackedStringArray("res://levels/level_01/level_01.tscn")
+_spawnable_scenes = PackedStringArray("uid://mou717ft6qef")
 spawn_path = NodePath("../Level")
 spawn_limit = 1
 
@@ -69,12 +69,23 @@ size_flags_horizontal = 3
 text = "Join
 "
 
-[node name="IPLineEdit" type="LineEdit" parent="UI/NotConnectedHBox"]
-custom_minimum_size = Vector2(400, 0)
+[node name="MarginContainer" type="MarginContainer" parent="UI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 80.0
+offset_bottom = 80.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_right = 20
+
+[node name="ScrollContainer" type="ScrollContainer" parent="UI/MarginContainer"]
 layout_mode = 2
-size_flags_horizontal = 3
-text = "127.0.0.1"
-placeholder_text = "Enter IP Address"
+
+[node name="ServerList" type="VBoxContainer" parent="UI/MarginContainer/ScrollContainer"]
+layout_mode = 2
 
 [node name="HostHBox" type="HBoxContainer" parent="UI"]
 visible = false

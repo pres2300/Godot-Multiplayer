@@ -1,12 +1,21 @@
 # Global Autoload
 extends Node
 
-const PORT = 7000
 const MAX_CONNECTIONS = 2
+const PACKET_READ_LIMIT: int = 32
 
 # Authentication vars
 var auth_ticket: Dictionary
 var client_auth_tickets: Array
+
+# Steam lobby vars
+var lobby_data
+var lobby_id: int = 0
+var lobby_members: Array = []
+var lobby_members_max: int = 10
+var lobby_vote_kick: bool = false
+var steam_id: int = 0
+var steam_username: String = ""
 
 var players = {}
 var player_info = {"name": "Name"}
@@ -14,8 +23,10 @@ var player_info = {"name": "Name"}
 signal player_connected(peer_id, player_info)
 signal player_disconnected(peer_id)
 signal server_disconnected
+signal lobbies_found(these_lobbies)
 
 func _ready():
+	# TODO: some of these may need to be deleted after Steam lobby stuff is created
 	multiplayer.peer_connected.connect(_on_player_connected)
 	multiplayer.peer_disconnected.connect(_on_player_disconnected)
 	multiplayer.connected_to_server.connect(_on_connected_to_server)
@@ -28,10 +39,25 @@ func _ready():
 
 	auth_ticket = Steam.getAuthSessionTicket()
 
+	# Steam Lobby callbacks
+	#Steam.join_requested.connect(_on_lobby_join_requested)
+	#Steam.lobby_chat_update.connect(_on_lobby_chat_update)
+	Steam.lobby_created.connect(_on_lobby_created)
+	#Steam.lobby_data_update.connect(_on_lobby_data_update)
+	#Steam.lobby_invite.connect(_on_lobby_invite)
+	#Steam.lobby_joined.connect(_on_lobby_joined)
+	Steam.lobby_match_list.connect(_on_lobby_match_list)
+	#Steam.lobby_message.connect(_on_lobby_message)
+	#Steam.persona_state_change.connect(_on_persona_change)
+
+	# Check for command line arguments
+	check_command_line()
+
 # Callback from getting the auth ticket from Steam
 func _on_get_auth_session_ticket_response(this_auth_ticket: int, result: int) -> void:
 	print("Auth session result: %s" % result)
 	print("Auth session ticket handle: %s" % this_auth_ticket)
+	print("Auth ticket: ", auth_ticket)
 
 # Callback from attempting to validate the auth ticket
 func _on_validate_auth_ticket_response(auth_id: int, response: int, owner_id: int) -> void:
@@ -52,6 +78,27 @@ func _on_validate_auth_ticket_response(auth_id: int, response: int, owner_id: in
 		9: verbose_response = "The user is banned for this game. The ban came via the Web API and not VAC."
 	print("Auth response: %s" % verbose_response)
 	print("Game owner ID: %s" % owner_id)
+
+func _on_lobby_created(has_connected: int, this_lobby_id: int) -> void:
+	if has_connected == 1:
+		# Set the lobby ID
+		lobby_id = this_lobby_id
+		print("Created a lobby: %s" % lobby_id)
+
+		# Set this lobby as joinable, just in case, though this should be done by default
+		Steam.setLobbyJoinable(lobby_id, true)
+
+		# Set some lobby data
+		Steam.setLobbyData(lobby_id, "name", "Gramps' Lobby")
+		Steam.setLobbyData(lobby_id, "mode", "GodotSteam test")
+
+		# Allow P2P connections to fallback to being relayed through Steam if needed
+		var set_relay: bool = Steam.allowP2PPacketRelay(true)
+		print("Allowing Steam to be relay backup: %s" % set_relay)
+
+func _on_lobby_match_list(these_lobbies: Array) -> void:
+	# Send the lobbies to the menu
+	lobbies_found.emit(these_lobbies)
 
 func _on_player_connected(id):
 	_register_player.rpc_id(id, player_info)
@@ -79,8 +126,15 @@ func _on_server_disconnected():
 	players.clear()
 	server_disconnected.emit()
 
-func validate_auth_session(ticket: Dictionary, steam_id: int) -> int:
-	var auth_response: int = Steam.beginAuthSession(ticket.buffer, ticket.size, steam_id)
+func get_lobby_list() -> void:
+	# Set distance to worldwide
+	Steam.addRequestLobbyListDistanceFilter(Steam.LOBBY_DISTANCE_FILTER_WORLDWIDE)
+
+	print("Requesting a lobby list")
+	Steam.requestLobbyList()
+
+func validate_auth_session(ticket: Dictionary, steam_id_to_auth: int) -> int:
+	var auth_response: int = Steam.beginAuthSession(ticket.buffer, ticket.size, steam_id_to_auth)
 
 	# Get a verbose response; unnecessary but useful in this example
 	var verbose_response: String
@@ -100,24 +154,38 @@ func validate_auth_session(ticket: Dictionary, steam_id: int) -> int:
 	# You can now add the client to the game
 	return auth_response
 
+func check_command_line() -> void:
+	var these_arguments: Array = OS.get_cmdline_args()
+
+	# There are arguments to process
+	if these_arguments.size() > 0:
+
+		# A Steam connection argument exists
+		if these_arguments[0] == "+connect_lobby":
+
+			# Lobby invite exists so try to connect to it
+			if int(these_arguments[1]) > 0:
+
+				# At this point, you'll probably want to change scenes
+				# Something like a loading into lobby screen
+				print("Command line lobby ID: %s" % these_arguments[1])
+				#TODO: join_lobby(int(these_arguments[1]))
+
 func create_game():
-	var peer = ENetMultiplayerPeer.new()
-	var error = peer.create_server(PORT, MAX_CONNECTIONS)
+	# Make sure a lobby is not already set
+	if lobby_id == 0:
+		Steam.createLobby(Steam.LOBBY_TYPE_PUBLIC, lobby_members_max)
 
-	if error:
-		return error
-
-	multiplayer.multiplayer_peer = peer
-
-	players[1] = player_info
-	player_connected.emit(1, player_info)
+	#players[1] = player_info
+	#player_connected.emit(1, player_info)
 
 func join_game(address):
-	print("Joining game")
-	var peer = ENetMultiplayerPeer.new()
-	var error = peer.create_client(address, PORT)
-
-	if error:
-		return error
-
-	multiplayer.multiplayer_peer = peer
+	pass
+	#print("Joining game")
+	#var peer = ENetMultiplayerPeer.new()
+	#var error = peer.create_client(address, PORT)
+#
+	#if error:
+		#return error
+#
+	#multiplayer.multiplayer_peer = peer
