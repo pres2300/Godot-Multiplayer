@@ -62,8 +62,9 @@ func create_lobbies_list(these_lobbies):
 		# Add the new lobby to the list
 		server_list.add_child(lobby_button)
 
-func join_lobby(lobby):
-	print("Joining lobby: ", lobby)
+func join_lobby(lobby_id):
+	print("Joining lobby: ", lobby_id)
+	Lobby.join_game(lobby_id)
 
 func change_level(scene):
 	for c in level_container.get_children():
