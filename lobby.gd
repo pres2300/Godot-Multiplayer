@@ -41,7 +41,7 @@ func _ready():
 
 	# Steam Lobby callbacks
 	Steam.join_requested.connect(_on_lobby_join_requested)
-	#Steam.lobby_chat_update.connect(_on_lobby_chat_update)
+	Steam.lobby_chat_update.connect(_on_lobby_chat_update)
 	Steam.lobby_created.connect(_on_lobby_created)
 	#Steam.lobby_data_update.connect(_on_lobby_data_update)
 	#Steam.lobby_invite.connect(_on_lobby_invite)
@@ -145,6 +145,33 @@ func _on_lobby_join_requested(this_lobby_id: int, friend_id: int) -> void:
 	# Attempt to join the lobby
 	join_game(this_lobby_id)
 
+func _on_lobby_chat_update(_this_lobby_id: int, change_id: int, _making_change_id: int, chat_state: int) -> void:
+	# Get the user who has made the lobby change
+	var changer_name: String = Steam.getFriendPersonaName(change_id)
+
+	# If a player has joined the lobby
+	if chat_state == Steam.CHAT_MEMBER_STATE_CHANGE_ENTERED:
+		print("%s has joined the lobby." % changer_name)
+
+	# Else if a player has left the lobby
+	elif chat_state == Steam.CHAT_MEMBER_STATE_CHANGE_LEFT:
+		print("%s has left the lobby." % changer_name)
+
+	# Else if a player has been kicked
+	elif chat_state == Steam.CHAT_MEMBER_STATE_CHANGE_KICKED:
+		print("%s has been kicked from the lobby." % changer_name)
+
+	# Else if a player has been banned
+	elif chat_state == Steam.CHAT_MEMBER_STATE_CHANGE_BANNED:
+		print("%s has been banned from the lobby." % changer_name)
+
+	# Else there was some unknown change
+	else:
+		print("%s did... something." % changer_name)
+
+	# Update the lobby now that a change has occurred
+	get_lobby_members()
+
 func _on_player_connected(id):
 	_register_player.rpc_id(id, player_info)
 
@@ -224,14 +251,14 @@ func create_game():
 	#players[1] = player_info
 	#player_connected.emit(1, player_info)
 
-func join_game(lobby_id):
-	print("Joining lobby: ", lobby_id)
+func join_game(join_lobby_id):
+	print("Joining lobby: ", join_lobby_id)
 
 	 # Clear any previous lobby members lists, if you were in a previous lobby
 	lobby_members.clear()
 
 	# Make the lobby join request to Steam
-	Steam.joinLobby(lobby_id)
+	Steam.joinLobby(join_lobby_id)
 
 	#var peer = ENetMultiplayerPeer.new()
 	#var error = peer.create_client(address, PORT)
