@@ -211,6 +211,10 @@ func get_lobby_list() -> void:
 	# Set distance to worldwide
 	Steam.addRequestLobbyListDistanceFilter(Steam.LOBBY_DISTANCE_FILTER_WORLDWIDE)
 
+	# NOTE: remove this if you ever get your own Steam game ID.
+	# This just makes it easier to filter out SpaceWar lobbies.
+	Steam.addRequestLobbyListStringFilter("name", "Oilyraincloud Lobby", Steam.LobbyComparison.LOBBY_COMPARISON_EQUAL)
+
 	print("Requesting a lobby list")
 	Steam.requestLobbyList()
 
