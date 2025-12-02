@@ -10,8 +10,8 @@ extends Node
 @export var level_scene: PackedScene
 
 func _ready() -> void:
-	multiplayer.connection_failed.connect(_on_connection_failed)
-	multiplayer.connected_to_server.connect(_on_connected_to_server)
+	#multiplayer.connection_failed.connect(_on_connection_failed)
+	#multiplayer.connected_to_server.connect(_on_connected_to_server)
 	Lobby.lobbies_found.connect(create_lobbies_list)
 
 func _on_host_button_pressed() -> void:

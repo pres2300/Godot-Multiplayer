@@ -109,9 +109,17 @@ func _on_lobby_joined(this_lobby_id: int, _permissions: int, _locked: bool, resp
 		# Get the lobby members
 		get_lobby_members()
 
-		# Make the initial handshake
-		#make_p2p_handshake()
-		#TODO
+		var id = Steam.getLobbyOwner(this_lobby_id)
+
+		if id != Steam.getSteamID():
+			# Make the initial handshake
+			var peer = SteamMultiplayerPeer.new()
+			var error = peer.create_client(id)
+
+			if error:
+				return
+
+			multiplayer.multiplayer_peer = peer
 
 	# Else it failed for some reason
 	else:
@@ -246,6 +254,14 @@ func check_command_line() -> void:
 func create_game():
 	# Make sure a lobby is not already set
 	if lobby_id == 0:
+		var peer = SteamMultiplayerPeer.new()
+		var error = peer.create_host(0)
+
+		if error:
+			return error
+
+		multiplayer.multiplayer_peer = peer
+
 		Steam.createLobby(Steam.LOBBY_TYPE_PUBLIC, lobby_members_max)
 
 	#players[1] = player_info
