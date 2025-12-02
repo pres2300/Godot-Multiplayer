@@ -112,12 +112,13 @@ func _on_lobby_joined(this_lobby_id: int, _permissions: int, _locked: bool, resp
 		var id = Steam.getLobbyOwner(this_lobby_id)
 
 		if id != Steam.getSteamID():
+			print("Joining ID:", id)
 			# Make the initial handshake
 			var peer = SteamMultiplayerPeer.new()
-			var error = peer.create_client(id)
+			var error = peer.create_client(id, 7001)
 
 			if error:
-				return
+				print("Failed to create peer: ", error)
 
 			multiplayer.multiplayer_peer = peer
 
@@ -258,6 +259,7 @@ func create_game():
 		var error = peer.create_host(0)
 
 		if error:
+			print("Unable to create host: ", error)
 			return error
 
 		multiplayer.multiplayer_peer = peer
