@@ -115,7 +115,7 @@ func _on_lobby_joined(this_lobby_id: int, _permissions: int, _locked: bool, resp
 			print("Joining ID:", id)
 			# Make the initial handshake
 			var peer = SteamMultiplayerPeer.new()
-			var error = peer.create_client(id, 7001)
+			var error = peer.create_client(id, 0)
 
 			if error:
 				print("Failed to create peer: ", error)
@@ -277,14 +277,6 @@ func join_game(join_lobby_id):
 
 	# Make the lobby join request to Steam
 	Steam.joinLobby(join_lobby_id)
-
-	#var peer = ENetMultiplayerPeer.new()
-	#var error = peer.create_client(address, PORT)
-#
-	#if error:
-		#return error
-#
-	#multiplayer.multiplayer_peer = peer
 
 func get_lobby_members() -> void:
 	# Clear your previous lobby list
