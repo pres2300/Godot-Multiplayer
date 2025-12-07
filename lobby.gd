@@ -253,19 +253,13 @@ func join_game(join_lobby_id):
 func leave_lobby() -> void:
 	# If in a lobby, leave it
 	if lobby_id != 0:
+		multiplayer.multiplayer_peer = null
+
 		# Send leave request to Steam
 		Steam.leaveLobby(lobby_id)
 
 		# Wipe the Steam lobby ID then display the default lobby ID and player list title
 		lobby_id = 0
-
-		# Close session with all users
-		for this_member in lobby_members:
-			# Make sure this isn't your Steam ID
-			if this_member['steam_id'] != steam_id:
-
-				multiplayer.multiplayer_peer.close()
-				multiplayer.multiplayer_peer = null
 
 		# Clear the local lobby list
 		lobby_members.clear()

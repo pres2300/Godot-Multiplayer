@@ -61,10 +61,9 @@ func hide_menu():
 
 func return_to_menu():
 	ui.show()
-	not_connected_hbox.show()
+	server_browser(true)
 	leave_ui.hide()
 	host_hbox.hide()
-	status_label.text = ""
 
 func create_lobbies_list(these_lobbies):
 	for this_lobby in these_lobbies:
