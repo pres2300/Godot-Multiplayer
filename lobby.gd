@@ -82,7 +82,7 @@ func _on_lobby_created(has_connected: int, this_lobby_id: int) -> void:
 		Steam.setLobbyJoinable(lobby_id, true)
 
 		# Set some lobby data
-		Steam.setLobbyData(lobby_id, "name", "Oilyraincloud Lobby")
+		Steam.setLobbyData(lobby_id, "name", "GameDevTV Lobby")
 		Steam.setLobbyData(lobby_id, "mode", "GodotSteam test")
 
 		# Allow P2P connections to fallback to being relayed through Steam if needed
