@@ -23,16 +23,18 @@ func _on_host_button_pressed() -> void:
 func _on_join_button_pressed() -> void:
 	Lobby.get_lobby_list()
 
-func _on_lobby_joined() -> void:
-	status_label.text = "Connected!"
+func _on_lobby_joined(joined) -> void:
+	if joined:
+		# join successful
+		status_label.text = "Connected!"
+	else:
+		# join failed
+		# TODO: A confirmation for the user here would be good to let them know the join failed
+		server_browser(true)
 
 func _on_start_button_pressed() -> void:
 	hide_menu.rpc()
 	change_level.call_deferred(level_scene)
-
-func _on_connection_failed() -> void:
-	status_label.text = "Failed to connect"
-	not_connected_hbox.show()
 
 @rpc("call_local", "authority", "reliable")
 func hide_menu():
@@ -58,8 +60,7 @@ func create_lobbies_list(these_lobbies):
 		server_list.add_child(lobby_button)
 
 func join_lobby(lobby_id):
-	not_connected_hbox.hide()
-	servers_container.hide()
+	server_browser(false)
 	status_label.text = "Connecting..."
 
 	print("Joining lobby: ", lobby_id)
@@ -74,6 +75,16 @@ func change_level(scene):
 	var new_level = scene.instantiate()
 	level_container.add_child(new_level)
 	new_level.level_complete.connect(_on_level_complete)
+
+func server_browser(show :bool) -> void:
+	if show:
+		not_connected_hbox.show()
+		servers_container.show()
+		status_label.text = ""
+	else:
+		not_connected_hbox.hide()
+		servers_container.hide()
+
 
 func _on_level_complete():
 	# this is where you would change to the next level if available, etc.

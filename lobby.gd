@@ -17,14 +17,8 @@ var lobby_vote_kick: bool = false
 var steam_id: int = 0
 var steam_username: String = ""
 
-var players = {}
-var player_info = {"name": "Name"}
-
-signal player_connected(peer_id, player_info)
-signal player_disconnected(peer_id)
-signal server_disconnected
 signal lobbies_found(these_lobbies)
-signal lobby_joined
+signal lobby_joined(joined)
 
 func _ready():
 	# Authentication callbacks
@@ -37,12 +31,14 @@ func _ready():
 	Steam.join_requested.connect(_on_lobby_join_requested)
 	Steam.lobby_chat_update.connect(_on_lobby_chat_update)
 	Steam.lobby_created.connect(_on_lobby_created)
-	#Steam.lobby_data_update.connect(_on_lobby_data_update)
-	#Steam.lobby_invite.connect(_on_lobby_invite)
 	Steam.lobby_joined.connect(_on_lobby_joined)
 	Steam.lobby_match_list.connect(_on_lobby_match_list)
+
+	# Unimplemented callbacks
 	#Steam.lobby_message.connect(_on_lobby_message)
 	#Steam.persona_state_change.connect(_on_persona_change)
+	#Steam.lobby_data_update.connect(_on_lobby_data_update)
+	#Steam.lobby_invite.connect(_on_lobby_invite)
 
 	# Check for command line arguments
 	check_command_line()
@@ -94,6 +90,9 @@ func _on_lobby_match_list(these_lobbies: Array) -> void:
 	lobbies_found.emit(these_lobbies)
 
 func _on_lobby_joined(this_lobby_id: int, _permissions: int, _locked: bool, response: int) -> void:
+	var join_success: bool = false
+	var id: int = 0
+
 	# If joining was successful
 	if response == Steam.CHAT_ROOM_ENTER_RESPONSE_SUCCESS:
 		# Set this lobby ID as your lobby ID
@@ -102,7 +101,7 @@ func _on_lobby_joined(this_lobby_id: int, _permissions: int, _locked: bool, resp
 		# Get the lobby members
 		get_lobby_members()
 
-		var id = Steam.getLobbyOwner(this_lobby_id)
+		id = Steam.getLobbyOwner(this_lobby_id)
 
 		if id != Steam.getSteamID():
 			print("Joining ID:", id)
@@ -115,7 +114,7 @@ func _on_lobby_joined(this_lobby_id: int, _permissions: int, _locked: bool, resp
 				return
 
 			multiplayer.multiplayer_peer = peer
-			lobby_joined.emit()
+			join_success = true
 
 	# Else it failed for some reason
 	else:
@@ -136,9 +135,8 @@ func _on_lobby_joined(this_lobby_id: int, _permissions: int, _locked: bool, resp
 
 		print("Failed to join this chat room: %s" % fail_reason)
 
-		# Reopen the lobby list
-		#_on_open_lobby_list_pressed()
-		#TODO
+	if id != Steam.getSteamID():
+		lobby_joined.emit(join_success)
 
 func _on_lobby_join_requested(this_lobby_id: int, friend_id: int) -> void:
 	# Get the lobby owner's name
@@ -175,32 +173,6 @@ func _on_lobby_chat_update(_this_lobby_id: int, change_id: int, _making_change_i
 
 	# Update the lobby now that a change has occurred
 	get_lobby_members()
-
-func _on_player_connected(id):
-	_register_player.rpc_id(id, player_info)
-
-@rpc("any_peer", "reliable")
-func _register_player(new_player_info):
-	var new_player_id = multiplayer.get_remote_sender_id()
-	players[new_player_id] = new_player_info
-	player_connected.emit(new_player_id, new_player_info)
-
-func _on_player_disconnected(id):
-	players.erase(id)
-	player_disconnected.emit(id)
-
-func _on_connected_to_server():
-	var peer_id = multiplayer.get_unique_id()
-	players[peer_id] = player_info
-	player_connected.emit(peer_id, player_info)
-
-func _on_connection_failed():
-	multiplayer.multiplayer_peer = null
-
-func _on_server_disconnected():
-	multiplayer.multiplayer_peer = null
-	players.clear()
-	server_disconnected.emit()
 
 func get_lobby_list() -> void:
 	# Set distance to worldwide
