@@ -1,18 +1,20 @@
 extends Node
 
-@onready var ui = $UI
+@onready var ui = $CanvasLayer/UI
 @onready var level_container = $Level
-@onready var not_connected_hbox = $UI/NotConnectedHBox
-@onready var host_hbox = $UI/HostHBox
-@onready var status_label = $UI/StatusLabel
-@onready var servers_container = $UI/ServersContainer
-@onready var server_list = $UI/ServersContainer/ScrollContainer/ServerList
+@onready var not_connected_hbox = $CanvasLayer/UI/NotConnectedHBox
+@onready var host_hbox = $CanvasLayer/UI/HostHBox
+@onready var status_label = $CanvasLayer/UI/StatusLabel
+@onready var servers_container = $CanvasLayer/UI/ServersContainer
+@onready var server_list = $CanvasLayer/UI/ServersContainer/ScrollContainer/ServerList
+@onready var leave_ui = $CanvasLayer/LeaveUI
 
 @export var level_scene: PackedScene
 
 func _ready() -> void:
 	Lobby.lobbies_found.connect(create_lobbies_list)
 	Lobby.lobby_joined.connect(_on_lobby_joined)
+	Lobby.host_left.connect(_on_host_left)
 
 func _on_host_button_pressed() -> void:
 	not_connected_hbox.hide()
@@ -36,9 +38,33 @@ func _on_start_button_pressed() -> void:
 	hide_menu.rpc()
 	change_level.call_deferred(level_scene)
 
+func _on_leave_button_pressed() -> void:
+	leave_game()
+
+func _on_host_left() -> void:
+	leave_game()
+
+func leave_game() -> void:
+	Lobby.leave_lobby()
+
+	for c in level_container.get_children():
+		level_container.remove_child(c)
+		c.level_complete.disconnect(_on_level_complete)
+		c.queue_free()
+
+	return_to_menu()
+
 @rpc("call_local", "authority", "reliable")
 func hide_menu():
 	ui.hide()
+	leave_ui.show()
+
+func return_to_menu():
+	ui.show()
+	not_connected_hbox.show()
+	leave_ui.hide()
+	host_hbox.hide()
+	status_label.text = ""
 
 func create_lobbies_list(these_lobbies):
 	for this_lobby in these_lobbies:
@@ -84,7 +110,6 @@ func server_browser(show :bool) -> void:
 	else:
 		not_connected_hbox.hide()
 		servers_container.hide()
-
 
 func _on_level_complete():
 	# this is where you would change to the next level if available, etc.

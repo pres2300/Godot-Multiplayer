@@ -16,9 +16,11 @@ var lobby_members_max: int = 10
 var lobby_vote_kick: bool = false
 var steam_id: int = 0
 var steam_username: String = ""
+var host_id: int = 0
 
 signal lobbies_found(these_lobbies)
 signal lobby_joined(joined)
+signal host_left
 
 func _ready():
 	# Authentication callbacks
@@ -91,7 +93,6 @@ func _on_lobby_match_list(these_lobbies: Array) -> void:
 
 func _on_lobby_joined(this_lobby_id: int, _permissions: int, _locked: bool, response: int) -> void:
 	var join_success: bool = false
-	var id: int = 0
 
 	# If joining was successful
 	if response == Steam.CHAT_ROOM_ENTER_RESPONSE_SUCCESS:
@@ -101,13 +102,13 @@ func _on_lobby_joined(this_lobby_id: int, _permissions: int, _locked: bool, resp
 		# Get the lobby members
 		get_lobby_members()
 
-		id = Steam.getLobbyOwner(this_lobby_id)
+		host_id = Steam.getLobbyOwner(this_lobby_id)
 
-		if id != Steam.getSteamID():
-			print("Joining ID:", id)
+		if host_id != Steam.getSteamID():
+			print("Joining ID:", host_id)
 			# Make the initial handshake
 			var peer = SteamMultiplayerPeer.new()
-			var error = peer.create_client(id, 0)
+			var error = peer.create_client(host_id, 0)
 
 			if error:
 				print("Failed to create peer: ", error)
@@ -135,7 +136,7 @@ func _on_lobby_joined(this_lobby_id: int, _permissions: int, _locked: bool, resp
 
 		print("Failed to join this chat room: %s" % fail_reason)
 
-	if id != Steam.getSteamID():
+	if host_id != Steam.getSteamID():
 		lobby_joined.emit(join_success)
 
 func _on_lobby_join_requested(this_lobby_id: int, friend_id: int) -> void:
@@ -158,6 +159,9 @@ func _on_lobby_chat_update(_this_lobby_id: int, change_id: int, _making_change_i
 	# Else if a player has left the lobby
 	elif chat_state == Steam.CHAT_MEMBER_STATE_CHANGE_LEFT:
 		print("%s has left the lobby." % changer_name)
+
+		if change_id == host_id:
+			host_left.emit()
 
 	# Else if a player has been kicked
 	elif chat_state == Steam.CHAT_MEMBER_STATE_CHANGE_KICKED:
@@ -237,9 +241,6 @@ func create_game():
 
 		Steam.createLobby(Steam.LOBBY_TYPE_PUBLIC, lobby_members_max)
 
-	#players[1] = player_info
-	#player_connected.emit(1, player_info)
-
 func join_game(join_lobby_id):
 	print("Joining lobby: ", join_lobby_id)
 
@@ -248,6 +249,26 @@ func join_game(join_lobby_id):
 
 	# Make the lobby join request to Steam
 	Steam.joinLobby(join_lobby_id)
+
+func leave_lobby() -> void:
+	# If in a lobby, leave it
+	if lobby_id != 0:
+		# Send leave request to Steam
+		Steam.leaveLobby(lobby_id)
+
+		# Wipe the Steam lobby ID then display the default lobby ID and player list title
+		lobby_id = 0
+
+		# Close session with all users
+		for this_member in lobby_members:
+			# Make sure this isn't your Steam ID
+			if this_member['steam_id'] != steam_id:
+
+				multiplayer.multiplayer_peer.close()
+				multiplayer.multiplayer_peer = null
+
+		# Clear the local lobby list
+		lobby_members.clear()
 
 func get_lobby_members() -> void:
 	# Clear your previous lobby list

@@ -21,7 +21,9 @@ _spawnable_scenes = PackedStringArray("uid://mou717ft6qef")
 spawn_path = NodePath("../Level")
 spawn_limit = 1
 
-[node name="UI" type="Control" parent="."]
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="UI" type="Control" parent="CanvasLayer"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -29,7 +31,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="BackgroundTrees" type="TextureRect" parent="UI"]
+[node name="BackgroundTrees" type="TextureRect" parent="CanvasLayer/UI"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -40,7 +42,7 @@ texture = ExtResource("1_k6lxc")
 expand_mode = 2
 stretch_mode = 4
 
-[node name="BackgroundHouses" type="TextureRect" parent="UI/BackgroundTrees"]
+[node name="BackgroundHouses" type="TextureRect" parent="CanvasLayer/UI/BackgroundTrees"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -51,25 +53,25 @@ texture = ExtResource("2_rl1b4")
 expand_mode = 2
 stretch_mode = 4
 
-[node name="NotConnectedHBox" type="HBoxContainer" parent="UI"]
+[node name="NotConnectedHBox" type="HBoxContainer" parent="CanvasLayer/UI"]
 layout_mode = 0
 offset_left = 20.0
 offset_top = 20.0
 offset_right = 720.0
 offset_bottom = 60.0
 
-[node name="HostButton" type="Button" parent="UI/NotConnectedHBox"]
+[node name="HostButton" type="Button" parent="CanvasLayer/UI/NotConnectedHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Host"
 
-[node name="JoinButton" type="Button" parent="UI/NotConnectedHBox"]
+[node name="JoinButton" type="Button" parent="CanvasLayer/UI/NotConnectedHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Join
 "
 
-[node name="ServersContainer" type="MarginContainer" parent="UI"]
+[node name="ServersContainer" type="MarginContainer" parent="CanvasLayer/UI"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -81,13 +83,13 @@ grow_vertical = 2
 theme_override_constants/margin_left = 20
 theme_override_constants/margin_right = 20
 
-[node name="ScrollContainer" type="ScrollContainer" parent="UI/ServersContainer"]
+[node name="ScrollContainer" type="ScrollContainer" parent="CanvasLayer/UI/ServersContainer"]
 layout_mode = 2
 
-[node name="ServerList" type="VBoxContainer" parent="UI/ServersContainer/ScrollContainer"]
+[node name="ServerList" type="VBoxContainer" parent="CanvasLayer/UI/ServersContainer/ScrollContainer"]
 layout_mode = 2
 
-[node name="HostHBox" type="HBoxContainer" parent="UI"]
+[node name="HostHBox" type="HBoxContainer" parent="CanvasLayer/UI"]
 visible = false
 layout_mode = 0
 offset_left = 20.0
@@ -95,13 +97,13 @@ offset_top = 20.0
 offset_right = 315.0
 offset_bottom = 60.0
 
-[node name="StartButton" type="Button" parent="UI/HostHBox"]
+[node name="StartButton" type="Button" parent="CanvasLayer/UI/HostHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Start
 "
 
-[node name="StatusLabel" type="Label" parent="UI"]
+[node name="StatusLabel" type="Label" parent="CanvasLayer/UI"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -112,6 +114,28 @@ label_settings = SubResource("LabelSettings_h3w2n")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[connection signal="pressed" from="UI/NotConnectedHBox/HostButton" to="." method="_on_host_button_pressed"]
-[connection signal="pressed" from="UI/NotConnectedHBox/JoinButton" to="." method="_on_join_button_pressed"]
-[connection signal="pressed" from="UI/HostHBox/StartButton" to="." method="_on_start_button_pressed"]
+[node name="LeaveUI" type="Control" parent="CanvasLayer"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="LeaveHBox" type="HBoxContainer" parent="CanvasLayer/LeaveUI"]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 315.0
+offset_bottom = 60.0
+
+[node name="LeaveButton" type="Button" parent="CanvasLayer/LeaveUI/LeaveHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Leave"
+
+[connection signal="pressed" from="CanvasLayer/UI/NotConnectedHBox/HostButton" to="." method="_on_host_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/UI/NotConnectedHBox/JoinButton" to="." method="_on_join_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/UI/HostHBox/StartButton" to="." method="_on_start_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/LeaveUI/LeaveHBox/LeaveButton" to="." method="_on_leave_button_pressed"]
