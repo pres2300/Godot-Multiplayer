@@ -5,14 +5,14 @@ extends Node
 @onready var not_connected_hbox = $UI/NotConnectedHBox
 @onready var host_hbox = $UI/HostHBox
 @onready var status_label = $UI/StatusLabel
-@onready var server_list = $UI/MarginContainer/ScrollContainer/ServerList
+@onready var servers_container = $UI/ServersContainer
+@onready var server_list = $UI/ServersContainer/ScrollContainer/ServerList
 
 @export var level_scene: PackedScene
 
 func _ready() -> void:
-	#multiplayer.connection_failed.connect(_on_connection_failed)
-	#multiplayer.connected_to_server.connect(_on_connected_to_server)
 	Lobby.lobbies_found.connect(create_lobbies_list)
+	Lobby.lobby_joined.connect(_on_lobby_joined)
 
 func _on_host_button_pressed() -> void:
 	not_connected_hbox.hide()
@@ -23,10 +23,8 @@ func _on_host_button_pressed() -> void:
 func _on_join_button_pressed() -> void:
 	Lobby.get_lobby_list()
 
-	# Old code for reference
-	#not_connected_hbox.hide()
-	#Lobby.join_game(ip_line_edit.text)
-	#status_label.text = "Connecting..."
+func _on_lobby_joined() -> void:
+	status_label.text = "Connected!"
 
 func _on_start_button_pressed() -> void:
 	hide_menu.rpc()
@@ -35,9 +33,6 @@ func _on_start_button_pressed() -> void:
 func _on_connection_failed() -> void:
 	status_label.text = "Failed to connect"
 	not_connected_hbox.show()
-
-func _on_connected_to_server() -> void:
-	status_label.text = "Connected!"
 
 @rpc("call_local", "authority", "reliable")
 func hide_menu():
@@ -63,6 +58,10 @@ func create_lobbies_list(these_lobbies):
 		server_list.add_child(lobby_button)
 
 func join_lobby(lobby_id):
+	not_connected_hbox.hide()
+	servers_container.hide()
+	status_label.text = "Connecting..."
+
 	print("Joining lobby: ", lobby_id)
 	Lobby.join_game(lobby_id)
 

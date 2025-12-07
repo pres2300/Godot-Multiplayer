@@ -24,15 +24,9 @@ signal player_connected(peer_id, player_info)
 signal player_disconnected(peer_id)
 signal server_disconnected
 signal lobbies_found(these_lobbies)
+signal lobby_joined
 
 func _ready():
-	# TODO: some of these may need to be deleted after Steam lobby stuff is created
-	multiplayer.peer_connected.connect(_on_player_connected)
-	multiplayer.peer_disconnected.connect(_on_player_disconnected)
-	multiplayer.connected_to_server.connect(_on_connected_to_server)
-	multiplayer.connection_failed.connect(_on_connection_failed)
-	multiplayer.server_disconnected.connect(_on_server_disconnected)
-
 	# Authentication callbacks
 	Steam.get_auth_session_ticket_response.connect(_on_get_auth_session_ticket_response)
 	Steam.validate_auth_ticket_response.connect(_on_validate_auth_ticket_response)
@@ -57,7 +51,6 @@ func _ready():
 func _on_get_auth_session_ticket_response(this_auth_ticket: int, result: int) -> void:
 	print("Auth session result: %s" % result)
 	print("Auth session ticket handle: %s" % this_auth_ticket)
-	print("Auth ticket: ", auth_ticket)
 
 # Callback from attempting to validate the auth ticket
 func _on_validate_auth_ticket_response(auth_id: int, response: int, owner_id: int) -> void:
@@ -122,6 +115,8 @@ func _on_lobby_joined(this_lobby_id: int, _permissions: int, _locked: bool, resp
 
 			multiplayer.multiplayer_peer = peer
 
+			lobby_joined.emit()
+
 	# Else it failed for some reason
 	else:
 		# Get the failure reason
@@ -141,7 +136,7 @@ func _on_lobby_joined(this_lobby_id: int, _permissions: int, _locked: bool, resp
 
 		print("Failed to join this chat room: %s" % fail_reason)
 
-		#Reopen the lobby list
+		# Reopen the lobby list
 		#_on_open_lobby_list_pressed()
 		#TODO
 
