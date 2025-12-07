@@ -102,6 +102,10 @@ func change_level(scene):
 	new_level.level_complete.connect(_on_level_complete)
 
 func server_browser(show :bool) -> void:
+	# Clear current list
+	for c in server_list.get_children():
+		c.queue_free()
+
 	if show:
 		not_connected_hbox.show()
 		servers_container.show()
