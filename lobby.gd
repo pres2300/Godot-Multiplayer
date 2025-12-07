@@ -112,9 +112,9 @@ func _on_lobby_joined(this_lobby_id: int, _permissions: int, _locked: bool, resp
 
 			if error:
 				print("Failed to create peer: ", error)
+				return
 
 			multiplayer.multiplayer_peer = peer
-
 			lobby_joined.emit()
 
 	# Else it failed for some reason
@@ -208,7 +208,7 @@ func get_lobby_list() -> void:
 
 	# NOTE: remove this if you ever get your own Steam game ID.
 	# This just makes it easier to filter out SpaceWar lobbies.
-	Steam.addRequestLobbyListStringFilter("name", "Oilyraincloud Lobby", Steam.LobbyComparison.LOBBY_COMPARISON_EQUAL)
+	Steam.addRequestLobbyListStringFilter("name", "GameDevTV Lobby", Steam.LobbyComparison.LOBBY_COMPARISON_EQUAL)
 
 	print("Requesting a lobby list")
 	Steam.requestLobbyList()
