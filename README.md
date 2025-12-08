@@ -1,10 +1,10 @@
 # GameDevTV's Godot Multiplayer course + GodotSteam + Steam Multiplayer Peer
 
-This repo implement's GameDevTV's Godot multiplayer project using Steam to connect online. I roughly followed the [documentation from GodotSteam](https://godotsteam.com/getting_started/introduction/).
+This repo implements GameDevTV's Godot multiplayer project using Steam to connect online. I roughly followed the [documentation from GodotSteam](https://godotsteam.com/getting_started/introduction/).
 
-In particular (other than basic installation of the extension), you will want to focus on the [Initializing Steam](https://godotsteam.com/getting_started/introduction/) tutorial as well as the [Lobbies](https://godotsteam.com/tutorials/lobbies/) tutorial.
+In particular (other than basic installation of the extension), you will want to focus on the [Initializing Steam](https://godotsteam.com/tutorials/initializing/) tutorial as well as the [Lobbies](https://godotsteam.com/tutorials/lobbies/) tutorial.
 
-You will also need to install the Steam Multiplayer Peer extension as well as GodotSteam. This will allow you to continue using the multiplayer peer functionality built in to Godot and relay it to Steam. You really only need to use Steam Multiplayer Peer to create the host and create the client depending on if you are hosting or joining a game. This will replace the areas of P2P connections mentioned in the GodotSteam docs until they add tutorials on using Multiplayer Peer.
+Along with GodotSteam, you will need to install the Steam Multiplayer Peer extension. This will allow you to continue using the multiplayer peer functionality built in to Godot and relay it to Steam. You really only need to use Steam Multiplayer Peer to create the host and create the client depending on if you are hosting or joining a game. This will replace the areas of P2P connections mentioned in the GodotSteam docs until they add tutorials on using Multiplayer Peer.
 
 Examples of using Steam Multiplayer Peer to host and join games are shown below.
 
