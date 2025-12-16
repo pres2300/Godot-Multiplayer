@@ -1,8 +1,8 @@
 # GameDevTV's Godot Multiplayer course + GodotSteam + Steam Multiplayer Peer
 
 Current versions:
-	* Godot v4.5.1
-	* GodotSteam v4.17
+* Godot v4.5.1
+* GodotSteam v4.17
 
 This repo implements GameDevTV's Godot multiplayer project using Steam to connect online. I roughly followed the [documentation from GodotSteam](https://godotsteam.com/getting_started/introduction/).
 
