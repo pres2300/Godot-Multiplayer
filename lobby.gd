@@ -80,7 +80,7 @@ func _authenticating(peer_id: int) -> void:
 
 func _auth_failed(peer_id: int) -> void:
 	print("Auth session failed with peer: ", peer_id)
-	# TODO: handle failure
+	lobby_joined.emit(false)
 
 func _on_authenticate(peer_id: int, data: PackedByteArray):
 	# Get the peer_steam_id from the peer_id as Multiplayer Peer uses different IDs
@@ -120,7 +120,12 @@ func _on_authenticate(peer_id: int, data: PackedByteArray):
 
 # Callback from attempting to validate the auth ticket
 func _on_validate_auth_ticket_response(auth_id: int, response: int, owner_id: int) -> void:
+	var peer_id = 0
+
 	print("Ticket Owner: %s" % auth_id)
+
+	if multiplayer.multiplayer_peer != null:
+		peer_id = multiplayer.multiplayer_peer.get_peer_id_for_steam_id(auth_id)
 
 	# Make the response more verbose, highly unnecessary but good for this example
 	var verbose_response: String
@@ -137,6 +142,43 @@ func _on_validate_auth_ticket_response(auth_id: int, response: int, owner_id: in
 		9: verbose_response = "The user is banned for this game. The ban came via the Web API and not VAC."
 	print("Auth response: %s" % verbose_response)
 	print("Game owner ID: %s" % owner_id)
+
+	match response:
+		0:
+			if multiplayer.is_server():
+				if pending_members.has(peer_id):
+					var auth_ticket = Steam.getAuthSessionTicket()
+					pending_members[peer_id][MY_TICKET] = auth_ticket
+					multiplayer.send_auth(peer_id, auth_ticket.buffer)
+					multiplayer.complete_auth.call_deferred(peer_id)
+			else:
+				if pending_members.has(peer_id):
+					if not pending_members[peer_id].has(MY_TICKET):
+						# Haven't authed back to this client yet
+						var auth_ticket = Steam.getAuthSessionTicket()
+						pending_members[peer_id][MY_TICKET] = auth_ticket
+						multiplayer.send_auth(peer_id, auth_ticket.buffer)
+						multiplayer.complete_auth.call_deferred(peer_id)
+					else:
+						# Client has already been authed
+						multiplayer.complete_auth(peer_id)
+
+			connected_clients[peer_id] = pending_members[peer_id]
+			pending_members.erase(peer_id)
+		6:
+			# If the session was canceled, disconnect from the peer.
+			# It's possible the peer is already disconnected, so check
+			# that multiplayer_peer is still valid.
+			if multiplayer.multiplayer_peer != null:
+				multiplayer.disconnect_peer(peer_id)
+		_:
+			# Authentication failed
+			multiplayer.disconnect_peer(peer_id)
+
+			if pending_members[peer_id].has(MY_TICKET):
+				Steam.cancelAuthTicket(pending_members[peer_id][MY_TICKET].id)
+			Steam.endAuthSession(auth_id)
+			pending_members.erase(peer_id)
 
 func _on_lobby_created(has_connected: int, this_lobby_id: int) -> void:
 	if has_connected == 1:
