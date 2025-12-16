@@ -68,7 +68,7 @@ text = "Host"
 [node name="JoinButton" type="Button" parent="CanvasLayer/UI/NotConnectedHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Join
+text = "Search
 "
 
 [node name="ServersContainer" type="MarginContainer" parent="CanvasLayer/UI"]

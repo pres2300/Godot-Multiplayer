@@ -5,29 +5,32 @@ const MAX_CONNECTIONS = 2
 const PACKET_READ_LIMIT: int = 32
 
 # Authentication vars
-var auth_ticket: Dictionary
-var client_auth_tickets: Array
+var connected_clients: Dictionary[int, Dictionary] = {}
+var pending_members: Dictionary[int, Dictionary] = {}
+
+# keys in connected_clients and pending_members dictionary
+const CLIENT_TICKET: String = "client_ticket"
+const MY_TICKET: String = "my_ticket"
+const STEAM_ID: String = "steam_id"
 
 # Steam lobby vars
-var lobby_data
 var lobby_id: int = 0
-var lobby_members: Array = []
 var lobby_members_max: int = 10
 var lobby_vote_kick: bool = false
-var steam_id: int = 0
 var steam_username: String = ""
 var host_id: int = 0
 
 signal lobbies_found(these_lobbies)
 signal lobby_joined(joined)
+signal lobby_created
+signal player_joined(player_name)
+signal player_left(player_name)
 signal host_left
 
 func _ready():
 	# Authentication callbacks
 	Steam.get_auth_session_ticket_response.connect(_on_get_auth_session_ticket_response)
 	Steam.validate_auth_ticket_response.connect(_on_validate_auth_ticket_response)
-
-	auth_ticket = Steam.getAuthSessionTicket()
 
 	# Steam Lobby callbacks
 	Steam.join_requested.connect(_on_lobby_join_requested)
@@ -42,6 +45,13 @@ func _ready():
 	#Steam.lobby_data_update.connect(_on_lobby_data_update)
 	#Steam.lobby_invite.connect(_on_lobby_invite)
 
+	# Godot Multiplayer signal callbacks
+	multiplayer.peer_connected.connect(_on_peer_connected)
+	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
+	multiplayer.peer_authenticating.connect(_authenticating)
+	multiplayer.peer_authentication_failed.connect(_auth_failed)
+	multiplayer.set_auth_callback(_on_authenticate)
+
 	# Check for command line arguments
 	check_command_line()
 
@@ -49,6 +59,64 @@ func _ready():
 func _on_get_auth_session_ticket_response(this_auth_ticket: int, result: int) -> void:
 	print("Auth session result: %s" % result)
 	print("Auth session ticket handle: %s" % this_auth_ticket)
+
+func _authenticating(peer_id: int) -> void:
+	if multiplayer.is_server():
+		# The server won't initiate the authentication, so this shouldn't happen
+		return
+
+	var auth_ticket: Dictionary = Steam.getAuthSessionTicket()
+	print("Peer authenticating: ", peer_id)
+
+	# Add this client's ticket to pending members dictionary
+	# while we wait for authentication to finish
+	pending_members[peer_id] = {
+		MY_TICKET: auth_ticket,
+		STEAM_ID: multiplayer.multiplayer_peer.get_steam_id_for_peer_id(peer_id)
+	}
+
+	# Send the ticket to the other client
+	multiplayer.send_auth(peer_id, auth_ticket.buffer)
+
+func _auth_failed(peer_id: int) -> void:
+	print("Auth session failed with peer: ", peer_id)
+	# TODO: handle failure
+
+func _on_authenticate(peer_id: int, data: PackedByteArray):
+	# Get the peer_steam_id from the peer_id as Multiplayer Peer uses different IDs
+	var peer_steam_id: int = multiplayer.multiplayer_peer.get_steam_id_for_peer_id(peer_id)
+
+	if multiplayer.is_server():
+		if not pending_members.has(peer_id):
+			print("Authenticating as server: ", peer_id, data)
+			pending_members[peer_id] = {
+				CLIENT_TICKET: data,
+				STEAM_ID: peer_steam_id
+			}
+	else:
+		print("Authenticating as client", peer_id, data)
+
+		if pending_members.has(peer_id):
+			print("I have already sent my auth to this client")
+			pending_members[peer_id][CLIENT_TICKET] = data
+		else:
+			print("New client")
+			pending_members[peer_id] = {
+				CLIENT_TICKET: data,
+				STEAM_ID: peer_steam_id
+			}
+
+	# Validate the client's ticket
+	var error: int = validate_auth_session(data, peer_id)
+
+	if error != 0:
+		print("Starting authentication session with peer %d has failed with error: %d" % [peer_id, error])
+		multiplayer.disconnect_peer(peer_id)
+
+		if pending_members[peer_id].has(MY_TICKET):
+			Steam.cancelAuthTicket(pending_members[peer_id][MY_TICKET].id)
+		Steam.endAuthSession(peer_steam_id)
+		pending_members.erase(peer_id)
 
 # Callback from attempting to validate the auth ticket
 func _on_validate_auth_ticket_response(auth_id: int, response: int, owner_id: int) -> void:
@@ -87,20 +155,54 @@ func _on_lobby_created(has_connected: int, this_lobby_id: int) -> void:
 		var set_relay: bool = Steam.allowP2PPacketRelay(true)
 		print("Allowing Steam to be relay backup: %s" % set_relay)
 
+		# Setup multiplayer peer
+		var peer = SteamMultiplayerPeer.new()
+		var error = peer.host_with_lobby(lobby_id)
+
+		if error:
+			print("Unable to create host: ", error)
+			return
+
+		multiplayer.multiplayer_peer = peer
+		lobby_created.emit()
+
+		get_lobby_members()
+
 func _on_lobby_match_list(these_lobbies: Array) -> void:
 	# Send the lobbies to the menu
 	lobbies_found.emit(these_lobbies)
 
-func _on_lobby_joined(this_lobby_id: int, _permissions: int, _locked: bool, response: int) -> void:
-	var join_success: bool = false
+func _on_peer_connected(peer_id: int) -> void:
+	var peer_steam_id = multiplayer.multiplayer_peer.get_steam_id_for_peer_id(peer_id)
+	var peer_name: String = Steam.getFriendPersonaName(peer_steam_id)
 
+	print("Peer connected [%d]: %s" % [peer_id, peer_name])
+	player_joined.emit(peer_name)
+
+	if host_id == peer_steam_id:
+		# We have successfully joined to the host
+		lobby_joined.emit(true)
+
+	get_lobby_members()
+
+func _on_peer_disconnected(peer_id: int) -> void:
+	var peer_steam_id = multiplayer.multiplayer_peer.get_steam_id_for_peer_id(peer_id)
+	var peer_name: String = Steam.getFriendPersonaName(peer_steam_id)
+
+	print("Peer disconnected [%d]: %s" % [peer_id, peer_name])
+
+	Steam.cancelAuthTicket(connected_clients[peer_id][MY_TICKET].id)
+	Steam.endAuthSession(peer_steam_id)
+	multiplayer.disconnect_peer(peer_id)
+	connected_clients.erase(peer_id)
+
+	get_lobby_members()
+
+func _on_lobby_joined(this_lobby_id: int, _permissions: int, _locked: bool, response: int) -> void:
 	# If joining was successful
 	if response == Steam.CHAT_ROOM_ENTER_RESPONSE_SUCCESS:
 		# Set this lobby ID as your lobby ID
 		lobby_id = this_lobby_id
-
-		# Get the lobby members
-		get_lobby_members()
 
 		host_id = Steam.getLobbyOwner(this_lobby_id)
 
@@ -108,14 +210,13 @@ func _on_lobby_joined(this_lobby_id: int, _permissions: int, _locked: bool, resp
 			print("Joining ID:", host_id)
 			# Make the initial handshake
 			var peer = SteamMultiplayerPeer.new()
-			var error = peer.create_client(host_id, 0)
+			var error = peer.connect_to_lobby(this_lobby_id)
 
 			if error:
 				print("Failed to create peer: ", error)
 				return
 
 			multiplayer.multiplayer_peer = peer
-			join_success = true
 
 	# Else it failed for some reason
 	else:
@@ -135,9 +236,7 @@ func _on_lobby_joined(this_lobby_id: int, _permissions: int, _locked: bool, resp
 			Steam.CHAT_ROOM_ENTER_RESPONSE_YOU_BLOCKED_MEMBER: fail_reason = "A user you have blocked is in the lobby."
 
 		print("Failed to join this chat room: %s" % fail_reason)
-
-	if host_id != Steam.getSteamID():
-		lobby_joined.emit(join_success)
+		lobby_joined.emit(false)
 
 func _on_lobby_join_requested(this_lobby_id: int, friend_id: int) -> void:
 	# Get the lobby owner's name
@@ -152,31 +251,33 @@ func _on_lobby_chat_update(_this_lobby_id: int, change_id: int, _making_change_i
 	# Get the user who has made the lobby change
 	var changer_name: String = Steam.getFriendPersonaName(change_id)
 
-	# If a player has joined the lobby
-	if chat_state == Steam.CHAT_MEMBER_STATE_CHANGE_ENTERED:
-		print("%s has joined the lobby." % changer_name)
+	match chat_state:
+		# If a player has joined the lobby
+		Steam.CHAT_MEMBER_STATE_CHANGE_ENTERED:
+			print("%s has joined the lobby." % changer_name)
 
-	# Else if a player has left the lobby
-	elif chat_state == Steam.CHAT_MEMBER_STATE_CHANGE_LEFT:
-		print("%s has left the lobby." % changer_name)
+		# Else if a player has left the lobby
+		Steam.CHAT_MEMBER_STATE_CHANGE_LEFT:
+			print("%s has left the lobby." % changer_name)
 
-		if change_id == host_id:
-			host_left.emit()
+			if change_id == host_id:
+				# If the host leaves, we will also leave
+				host_left.emit()
+				leave_lobby()
+			else:
+				player_left.emit(changer_name)
 
-	# Else if a player has been kicked
-	elif chat_state == Steam.CHAT_MEMBER_STATE_CHANGE_KICKED:
-		print("%s has been kicked from the lobby." % changer_name)
+		# Else if a player has been kicked
+		Steam.CHAT_MEMBER_STATE_CHANGE_KICKED:
+			print("%s has been kicked from the lobby." % changer_name)
 
-	# Else if a player has been banned
-	elif chat_state == Steam.CHAT_MEMBER_STATE_CHANGE_BANNED:
-		print("%s has been banned from the lobby." % changer_name)
+		# Else if a player has been banned
+		Steam.CHAT_MEMBER_STATE_CHANGE_BANNED:
+			print("%s has been banned from the lobby." % changer_name)
 
-	# Else there was some unknown change
-	else:
-		print("%s did... something." % changer_name)
-
-	# Update the lobby now that a change has occurred
-	get_lobby_members()
+		# Else there was some unknown change
+		_:
+			print("%s did... something." % changer_name)
 
 func get_lobby_list() -> void:
 	# Set distance to worldwide
@@ -189,25 +290,30 @@ func get_lobby_list() -> void:
 	print("Requesting a lobby list")
 	Steam.requestLobbyList()
 
-func validate_auth_session(ticket: Dictionary, steam_id_to_auth: int) -> int:
-	var auth_response: int = Steam.beginAuthSession(ticket.buffer, ticket.size, steam_id_to_auth)
+func validate_auth_session(ticket_data: PackedByteArray, peer_id: int) -> int:
+	var auth_response: int = Steam.beginAuthSession(
+		ticket_data,
+		ticket_data.size(),
+		multiplayer.multiplayer_peer.get_steam_id_for_peer_id(peer_id))
+
+	print("Starting auth session with player: ",
+		Steam.getFriendPersonaName(multiplayer.multiplayer_peer.get_steam_id_for_peer_id(peer_id)))
 
 	# Get a verbose response; unnecessary but useful in this example
 	var verbose_response: String
 	match auth_response:
-		0: verbose_response = "Ticket is valid for this game and this Steam ID."
+		0: verbose_response = "Successfully started auth session."
 		1: verbose_response = "The ticket is invalid."
 		2: verbose_response = "A ticket has already been submitted for this Steam ID."
 		3: verbose_response = "Ticket is from an incompatible interface version."
 		4: verbose_response = "Ticket is not for this game."
 		5: verbose_response = "Ticket has expired."
-	print("Auth verifcation response: %s" % verbose_response)
+	print("Auth session start response: %s" % verbose_response)
 
 	if auth_response == 0:
-		print("Validation successful, adding user to client_auth_tickets")
-		client_auth_tickets.append({"id": steam_id, "ticket": ticket.id})
+		print("Auth session creation successful")
 
-	# You can now add the client to the game
+	# Wait for _on_validate_auth_ticket_response
 	return auth_response
 
 func check_command_line() -> void:
@@ -228,24 +334,19 @@ func check_command_line() -> void:
 				#TODO: join_lobby(int(these_arguments[1]))
 
 func create_game():
+	connected_clients.clear()
+	pending_members.clear()
+
 	# Make sure a lobby is not already set
 	if lobby_id == 0:
-		var peer = SteamMultiplayerPeer.new()
-		var error = peer.create_host(0)
-
-		if error:
-			print("Unable to create host: ", error)
-			return error
-
-		multiplayer.multiplayer_peer = peer
-
 		Steam.createLobby(Steam.LOBBY_TYPE_PUBLIC, lobby_members_max)
 
 func join_game(join_lobby_id):
 	print("Joining lobby: ", join_lobby_id)
 
-	 # Clear any previous lobby members lists, if you were in a previous lobby
-	lobby_members.clear()
+	# Clear the connected clients lists to start anew
+	connected_clients.clear()
+	pending_members.clear()
 
 	# Make the lobby join request to Steam
 	Steam.joinLobby(join_lobby_id)
@@ -253,6 +354,11 @@ func join_game(join_lobby_id):
 func leave_lobby() -> void:
 	# If in a lobby, leave it
 	if lobby_id != 0:
+		for peer_id in connected_clients.keys():
+			Steam.cancelAuthTicket(connected_clients[peer_id][MY_TICKET].id)
+			Steam.endAuthSession(connected_clients[peer_id][STEAM_ID])
+			connected_clients.erase(peer_id)
+
 		multiplayer.multiplayer_peer = null
 
 		# Send leave request to Steam
@@ -261,13 +367,7 @@ func leave_lobby() -> void:
 		# Wipe the Steam lobby ID then display the default lobby ID and player list title
 		lobby_id = 0
 
-		# Clear the local lobby list
-		lobby_members.clear()
-
 func get_lobby_members() -> void:
-	# Clear your previous lobby list
-	lobby_members.clear()
-
 	# Get the number of members from this lobby from Steam
 	var num_of_members: int = Steam.getNumLobbyMembers(lobby_id)
 
@@ -281,4 +381,4 @@ func get_lobby_members() -> void:
 		print("lobby member: ", member_steam_name)
 
 		# Add them to the list
-		lobby_members.append({"steam_id":member_steam_id, "steam_name":member_steam_name})
+		player_joined.emit(member_steam_name)
