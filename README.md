@@ -8,9 +8,7 @@ This repo implements GameDevTV's Godot multiplayer project using Steam to connec
 
 In particular (other than basic installation of the extension), you will want to focus on the [Initializing Steam](https://godotsteam.com/tutorials/initializing/) tutorial as well as the [Lobbies](https://godotsteam.com/tutorials/lobbies/) tutorial. [Authentication](https://godotsteam.com/tutorials/authentication/) is done as well, but Multiplayer Peer helps with a lot of that.
 
-Along with GodotSteam, you will need to install the Steam Multiplayer Peer extension. This will allow you to continue using the multiplayer peer functionality built in to Godot and relay it to Steam. You really only need to use Steam Multiplayer Peer to create the host and create the client depending on if you are hosting or joining a game. This will replace the areas of P2P connections mentioned in the GodotSteam docs until they add tutorials on using Multiplayer Peer.
-
-Examples of using Steam Multiplayer Peer to host and join games are shown below.
+This example still uses Multiplayer Peer (Called Steam Multiplayer Peer, and now included in GodotSteam as of version v4.17) to connect to other peers and perform RPCs. Examples of using Steam Multiplayer Peer to host and join games are shown below.
 
 ## Hosting a game
 
