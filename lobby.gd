@@ -80,7 +80,14 @@ func _authenticating(peer_id: int) -> void:
 
 func _auth_failed(peer_id: int) -> void:
 	print("Auth session failed with peer: ", peer_id)
-	lobby_joined.emit(false)
+
+	var steam_peer_id: int = multiplayer.multiplayer_peer.get_steam_id_for_peer_id(peer_id)
+
+	if pending_members.has(peer_id) and pending_members[peer_id].has(MY_TICKET):
+		Steam.cancelAuthTicket(pending_members[peer_id][MY_TICKET].id)
+
+	Steam.endAuthSession(steam_peer_id)
+	pending_members.erase(peer_id)
 
 func _on_authenticate(peer_id: int, data: PackedByteArray):
 	# Get the peer_steam_id from the peer_id as Multiplayer Peer uses different IDs
@@ -122,10 +129,14 @@ func _on_authenticate(peer_id: int, data: PackedByteArray):
 func _on_validate_auth_ticket_response(auth_id: int, response: int, owner_id: int) -> void:
 	var peer_id = 0
 
-	print("Ticket Owner: %s" % auth_id)
-
 	if multiplayer.multiplayer_peer != null:
 		peer_id = multiplayer.multiplayer_peer.get_peer_id_for_steam_id(auth_id)
+
+	if peer_id == 0:
+		# Something went wrong during authentication (e.g. the peer disconnected while authenticating)
+		return
+
+	print("Ticket Owner: %s" % auth_id)
 
 	# Make the response more verbose, highly unnecessary but good for this example
 	var verbose_response: String
@@ -162,9 +173,6 @@ func _on_validate_auth_ticket_response(auth_id: int, response: int, owner_id: in
 					else:
 						# Client has already been authed
 						multiplayer.complete_auth(peer_id)
-
-			connected_clients[peer_id] = pending_members[peer_id]
-			pending_members.erase(peer_id)
 		6:
 			# If the session was canceled, disconnect from the peer.
 			# It's possible the peer is already disconnected, so check
@@ -224,6 +232,9 @@ func _on_peer_connected(peer_id: int) -> void:
 	if host_id == peer_steam_id:
 		# We have successfully joined to the host
 		lobby_joined.emit(true)
+
+	connected_clients[peer_id] = pending_members[peer_id]
+	pending_members.erase(peer_id)
 
 	get_lobby_members()
 
